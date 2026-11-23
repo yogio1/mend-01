@@ -347,6 +347,7 @@ function applyUnified(sec: USec, tree: Tree, strict: boolean): void {
     tree.moves.set(newP, oldP);
     return;
   }
+  if (!named(oldP) && !named(newP)) return;
   const path = named(oldP) ? oldP : (newP as string);
   checkSafe(path);
   if (tree.get(path) === null) throw new Fail('missing', path);
@@ -390,11 +391,13 @@ function parseSearchReplace(lines: string[]): SRBlock[] {
     if (path === null) throw new Exit2(`error: parse ${at + 1}`);
     let eq = -1;
     for (let j = i + 1; j < lines.length; j += 1) {
+      if (lines[j].trimEnd() === '>>>>>>> REPLACE') {
+        throw new Exit2(`error: parse ${at + 1}`);
+      }
       if (lines[j].trimEnd() === '=======') {
         eq = j;
         break;
       }
-      if (lines[j].trimEnd() === '<<<<<<< SEARCH') throw new Exit2(`error: parse ${at + 1}`);
     }
     if (eq < 0) throw new Exit2(`error: parse ${at + 1}`);
     let rep = -1;
@@ -512,6 +515,7 @@ function parseV4A(lines: string[]): V4Sec[] {
       }
       if (l.startsWith('@@')) {
         cur.chunks.push({ anchor: l.slice(2).trim() || null, eof: false, entries: [] });
+        bodySeen = true;
         continue;
       }
       if (l === '*** End of File') {
